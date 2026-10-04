@@ -16,7 +16,6 @@ if (!file_exists($connPath)) {
     exit;
 }
 require_once $connPath;
-
 if (!isset($pdo) || !$pdo instanceof PDO) {
     $_SESSION['error'] = "Database connection failed!";
     header('Location: ../login.php');
@@ -195,7 +194,8 @@ try {
 
 $progressCount = $doneCount = 0;
 foreach ($rows as $r) {
-    if (isset($r['status']) && (string)$r['status'] === 'done') {
+    $status = (string)($r['status'] ?? 'in_progress');
+    if ($status === 'done') {
         $doneCount++;
     } else {
         $progressCount++;
@@ -323,57 +323,57 @@ function formatDate(?string $datetime): string {
       cursor: default;
       user-select: none;
     }
-   .btn-primary-red {
-  background: linear-gradient(135deg, var(--success), #15803d);
-  border: none;
-  color: white;
-  font-weight: 600;
-  padding: 0.5rem 1.25rem;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);
-}
-.btn-primary-red:hover {
-  background: linear-gradient(135deg, #15803d, #166534);
-  color: white;
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
-  transform: translateY(-1px);
-}
-   .btn-upload {
-  background: linear-gradient(135deg, #1e40af, #1e3a8a);
-  border: none;
-  color: white;
-  font-weight: 600;
-  padding: 0.4rem 1rem;
-  border-radius: 8px;
-  font-size: 0.8125rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
-}
-.btn-upload:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1e3a8a, #172554);
-  color: white;
-  box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
-  transform: translateY(-1px);
-}
-.btn-upload:disabled {
-  background: #93c5fd;
-  cursor: not-allowed;
-  opacity: 0.7;
-  transform: none;
-  box-shadow: none;
-}
-.btn-loading {
-  pointer-events: none;
-  opacity: 0.85;
-}
-.btn-loading .spinner-border {
-  width: 1rem;
-  height: 1rem;
-  border-width: 0.15em;
-  margin-right: 0.5rem;
-  vertical-align: middle;
-}
+    .btn-primary-red {
+      background: linear-gradient(135deg, var(--success), #15803d);
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(22, 163, 74, 0.2);
+    }
+    .btn-primary-red:hover {
+      background: linear-gradient(135deg, #15803d, #166534);
+      color: white;
+      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+      transform: translateY(-1px);
+    }
+    .btn-upload {
+      background: linear-gradient(135deg, #1e40af, #1e3a8a);
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+    }
+    .btn-upload:hover:not(:disabled) {
+      background: linear-gradient(135deg, #1e3a8a, #172554);
+      color: white;
+      box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
+      transform: translateY(-1px);
+    }
+    .btn-upload:disabled {
+      background: #93c5fd;
+      cursor: not-allowed;
+      opacity: 0.7;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn-loading {
+      pointer-events: none;
+      opacity: 0.85;
+    }
+    .btn-loading .spinner-border {
+      width: 1rem;
+      height: 1rem;
+      border-width: 0.15em;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
     .table-card {
       background: white;
       border-radius: 12px;
@@ -637,13 +637,9 @@ function formatDate(?string $datetime): string {
                   <td class="fw-semibold text-dark"><?php echo htmlspecialchars((string)($m['title'] ?? '')); ?></td>
                   <td>
                     <?php if ($st === 'done'): ?>
-                      <span class="status-badge done">
-                        <i class="bi bi-check-circle-fill"></i> Done
-                      </span>
+                      <span class="status-badge done">Done</span>
                     <?php else: ?>
-                      <span class="status-display">
-                        <i class="bi bi-clock-history"></i> In Progress
-                      </span>
+                      <span class="status-display">In Progress</span>
                     <?php endif; ?>
                   </td>
                   
@@ -663,7 +659,7 @@ function formatDate(?string $datetime): string {
                         <button type="button" class="btn-upload w-100" 
                                 id="uploadBtn-<?php echo (int)$m['id']; ?>"
                                 onclick="confirmUpload(<?php echo (int)$m['id']; ?>)" disabled>
-                          <i class="bi bi-cloud-upload me-1"></i> Upload & Mark Done
+                          Upload & Mark Done
                         </button>
                       </form>
                     <?php else: ?>
@@ -703,7 +699,8 @@ let photoPreviewData = {};
 function previewPhoto(taskId, input) {
   if (!input.files || !input.files[0]) {
     photoPreviewData[taskId] = null;
-    document.getElementById(`uploadBtn-${taskId}`).disabled = true;
+    const btn = document.getElementById(`uploadBtn-${taskId}`);
+    if (btn) btn.disabled = true;
     return;
   }
   const file = input.files[0];
@@ -715,7 +712,8 @@ function previewPhoto(taskId, input) {
   const reader = new FileReader();
   reader.onload = function(e) {
     photoPreviewData[taskId].dataUrl = e.target.result;
-    document.getElementById(`uploadBtn-${taskId}`).disabled = false;
+    const btn = document.getElementById(`uploadBtn-${taskId}`);
+    if (btn) btn.disabled = false;
   };
   reader.readAsDataURL(file);
 }
@@ -727,7 +725,7 @@ function confirmUpload(taskId) {
       icon: 'warning',
       title: 'Please Select a Photo',
       text: 'Choose an image file first before submitting proof.',
-      confirmButtonColor: '#26d9dc',
+      confirmButtonColor: '#0284c7',
       timer: 2500
     });
     return;
@@ -746,25 +744,27 @@ function confirmUpload(taskId) {
           File size: ${preview.size}
         </div>
         <p style="margin-top:1rem; font-size:0.8125rem; color:#dc2626; font-weight:500;">
-          <i class="bi bi-exclamation-circle"></i> 
           Once submitted, the task will be marked as <strong>Done</strong> and cannot be modified.
         </p>
       </div>
     `,
     showCancelButton: true,
-    confirmButtonColor: '#101575',
+    confirmButtonColor: '#1e40af',
     cancelButtonColor: '#6b7280',
-    confirmButtonText: '<i class="bi bi-check-circle-fill me-1"></i> Yes, Submit & Mark Done',
+    confirmButtonText: 'Yes, Submit & Mark Done',
     cancelButtonText: 'Cancel',
     focusCancel: true,
     showLoaderOnConfirm: true,
     preConfirm: () => {
       return new Promise(resolve => {
         const btn = document.getElementById(`uploadBtn-${taskId}`);
-        btn.classList.add('btn-loading');
-        btn.innerHTML = '<span class="spinner-border"></span> Uploading...';
-        btn.disabled = true;
-        document.getElementById(`uploadForm-${taskId}`).submit();
+        if (btn) {
+          btn.classList.add('btn-loading');
+          btn.innerHTML = 'Uploading...';
+          btn.disabled = true;
+        }
+        const form = document.getElementById(`uploadForm-${taskId}`);
+        if (form) form.submit();
         resolve();
       });
     },
