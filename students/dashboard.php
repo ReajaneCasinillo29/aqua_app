@@ -1,23 +1,17 @@
 <?php
 declare(strict_types=1);
-
 session_start();
 session_regenerate_id(true);
-
 if (!isset($_SESSION['student_id'])) {
   header('Location: ../login.php');
   exit;
 }
-
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
-
 require_once __DIR__ . '/../connection.php';
-
 $studentId = (int)$_SESSION['student_id'];
-
 $latest = $pdo->prepare("
   SELECT * FROM water_diagnostics 
   WHERE student_id = :sid 
@@ -26,11 +20,9 @@ $latest = $pdo->prepare("
 ");
 $latest->execute([':sid' => $studentId]);
 $diag = $latest->fetch();
-
 $ph = $turb = $tds = $temp = $fluor = null;
 $safeStatus = 'safe';
 $updatedAt = '';
-
 if ($diag) {
   $ph = isset($diag['ph']) ? (float)$diag['ph'] : null;
   $turb = isset($diag['turbidity']) ? (float)$diag['turbidity'] : null;
@@ -40,18 +32,15 @@ if ($diag) {
   $safeStatus = (string)($diag['safe_status'] ?? 'safe');
   $updatedAt = (string)$diag['created_at'];
 }
-
 // Unread notifications count
 $notifStmt = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE student_id = :sid AND is_read = 0');
 $notifStmt->execute([':sid' => $studentId]);
 $unreadCount = (int)$notifStmt->fetchColumn();
-
 // Sensor status helper
 function sensorStatus($value, $low, $high): string {
   if ($value === null) return 'none';
   return ($value >= $low && $value <= $high) ? 'safe' : 'unsafe';
 }
-
 $sensors = [
   ['label' => 'pH Level',      'value' => $ph,    'low' => 6.5,  'high' => 8.5,   'unit' => '',    'icon' => 'bi-droplet-half',     'desc' => 'Acidity / Alkalinity',  'range' => '6.5 – 8.5'],
   ['label' => 'Turbidity',     'value' => $turb,  'low' => 0,    'high' => 5,     'unit' => 'NTU', 'icon' => 'bi-eye',              'desc' => 'Water Clarity',         'range' => '0 – 5 NTU'],
@@ -59,7 +48,6 @@ $sensors = [
   ['label' => 'Temperature',   'value' => $temp,  'low' => 20,   'high' => 30,    'unit' => '°C',  'icon' => 'bi-thermometer-half', 'desc' => 'Water Temperature',     'range' => '20 – 30°C'],
   ['label' => 'Fluorescence',  'value' => $fluor, 'low' => 0,    'high' => 2000,  'unit' => '',    'icon' => 'bi-lightbulb',        'desc' => 'Contaminant Detection', 'range' => '0 – 2,000'],
 ];
-
 // Count safe/unsafe/no-data sensors
 $safeCount = 0; $unsafeCount = 0; $noData = 0;
 foreach ($sensors as $s) {
@@ -68,7 +56,6 @@ foreach ($sensors as $s) {
   elseif ($st === 'unsafe') $unsafeCount++;
   else $noData++;
 }
-
 if (isset($_GET['new']) && $_GET['new'] === '1') {
     echo '<script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -81,7 +68,6 @@ if (isset($_GET['new']) && $_GET['new'] === '1') {
     });
     </script>';
 }
-
 // Percentage for gauge
 function sensorPercent($value, $low, $high): int {
   if ($value === null) return 0;
@@ -109,7 +95,6 @@ function sensorPercent($value, $low, $high): int {
       --blur-strength: 4px;
       --reveal-delay: 280ms;
     }
-
     /* ── Hero Banner ── */
     .dash-hero {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
@@ -217,7 +202,6 @@ function sensorPercent($value, $low, $high): int {
     }
     .dash-meta-item i { font-size: 0.85rem; color: rgba(255,255,255,0.25); }
     .dash-meta-item strong { color: rgba(255,255,255,0.7); font-weight: 600; }
-
     /* ── Sensor Section ── */
     .sensor-section {
       background: #fff;
@@ -244,7 +228,6 @@ function sensorPercent($value, $low, $high): int {
       color: #9CA3AF;
       margin-top: 2px;
     }
-
     /* CSS Grid for sensor cards */
     .sensor-grid {
       display: grid;
@@ -270,12 +253,10 @@ function sensorPercent($value, $low, $high): int {
     .sensor-grid .sensor-card:nth-child(3n) { border-right: none; }
     .sensor-grid .sensor-card:nth-last-child(-n+3) { border-bottom: none; }
     .sensor-grid .sensor-card:nth-last-child(-n+2):nth-child(n+4) { border-bottom: none; }
-
     .sensor-grid .sensor-card:hover {
       background: #fafbfc;
       z-index: 1;
     }
-
     @media (max-width: 991px) {
       .sensor-grid { grid-template-columns: repeat(2, 1fr); }
       .sensor-grid .sensor-card { border-right: 1px solid #f1f3f5; border-bottom: 1px solid #f1f3f5; }
@@ -288,7 +269,6 @@ function sensorPercent($value, $low, $high): int {
       .sensor-grid .sensor-card { border-right: none; }
       .sensor-grid .sensor-card:last-child { border-bottom: none; }
     }
-
     /* ── Glass Shimmer Overlay ── */
     .glass-shimmer {
       position: absolute;
@@ -317,7 +297,6 @@ function sensorPercent($value, $low, $high): int {
       opacity: 0;
       visibility: hidden;
     }
-
     .sensor-card-body {
       padding: 1.25rem 1.5rem;
       position: relative;
@@ -341,7 +320,6 @@ function sensorPercent($value, $low, $high): int {
     .sensor-icon-wrap.safe   { background: #E8F8F0; color: #059669; }
     .sensor-icon-wrap.unsafe { background: #FEE2E2; color: #DC2626; }
     .sensor-icon-wrap.none   { background: #F3F4F6; color: #9CA3AF; }
-
     .sensor-status-dot {
       width: 8px;
       height: 8px;
@@ -351,7 +329,6 @@ function sensorPercent($value, $low, $high): int {
     .sensor-status-dot.safe   { background: #10B981; box-shadow: 0 0 6px rgba(16,185,129,0.4); }
     .sensor-status-dot.unsafe { background: #EF4444; box-shadow: 0 0 6px rgba(239,68,68,0.4); }
     .sensor-status-dot.none   { background: #D1D5DB; }
-
     .sensor-label {
       font-size: 0.7rem;
       text-transform: uppercase;
@@ -377,7 +354,6 @@ function sensorPercent($value, $low, $high): int {
       font-size: 0.73rem;
       color: #B0B7C3;
     }
-
     .sensor-gauge {
       margin-top: 0.75rem;
     }
@@ -403,7 +379,6 @@ function sensorPercent($value, $low, $high): int {
       color: #C4C9D4;
       font-weight: 500;
     }
-
     .usage-guide-card {
       background: #FFF8E1;
       border: 1px solid #FFE082;
@@ -463,50 +438,6 @@ function sensorPercent($value, $low, $high): int {
       padding-top: 0.75rem;
       border-top: 1px solid rgba(245, 158, 11, 0.2);
     }
-
-    .quick-action {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 0.85rem 1rem;
-      border-radius: 12px;
-      background: #fff;
-      border: 1px solid #F0F1F3;
-      text-decoration: none;
-      color: var(--dark);
-      transition: all 0.2s;
-    }
-    .quick-action:hover {
-      border-color: var(--red-primary);
-      background: rgba(200,16,46,0.02);
-      color: var(--dark);
-      box-shadow: 0 4px 12px rgba(200,16,46,0.08);
-      transform: translateY(-1px);
-    }
-    .quick-action-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      flex-shrink: 0;
-    }
-    .quick-action-label {
-      font-weight: 600;
-      font-size: 0.85rem;
-    }
-    .quick-action-sub {
-      font-size: 0.7rem;
-      color: #9CA3AF;
-    }
-    .quick-action .bi-chevron-right {
-      margin-left: auto;
-      color: #D1D5DB;
-      font-size: 0.8rem;
-    }
-
     .summary-ring {
       width: 72px;
       height: 72px;
@@ -554,7 +485,6 @@ function sensorPercent($value, $low, $high): int {
 <div id="pageContent">
   <?php $pageTitle = 'Dashboard'; $pageIcon = 'bi-speedometer2'; include __DIR__ . '/_topbar.php'; ?>
   <div class="p-4">
-
     <!-- ── Hero Banner ── -->
     <div class="dash-hero mb-4">
       <div class="dash-hero-inner">
@@ -619,7 +549,6 @@ function sensorPercent($value, $low, $high): int {
       </p>
     </div>
     <?php endif; ?>
-
     <!-- ── Sensor Readings ── -->
     <?php
       $totalActive = $safeCount + $unsafeCount;
@@ -680,62 +609,6 @@ function sensorPercent($value, $low, $high): int {
         <?php endforeach; ?>
       </div>
     </div>
-
-    <!-- ── Quick Actions ── -->
-    <div class="row g-3">
-      <div class="col-12">
-        <h6 class="fw-bold mb-3" style="letter-spacing:-0.3px;">Quick Actions</h6>
-      </div>
-      <div class="col-md-6 col-xl-3">
-        <a href="water-info.php" class="quick-action">
-          <div class="quick-action-icon" style="background:#EBF5FB;color:#2563EB;">
-            <i class="bi bi-droplet-half"></i>
-          </div>
-          <div>
-            <div class="quick-action-label">Water Info</div>
-            <div class="quick-action-sub">Detailed sensor data</div>
-          </div>
-          <i class="bi bi-chevron-right"></i>
-        </a>
-      </div>
-      <div class="col-md-6 col-xl-3">
-        <a href="my-usage.php" class="quick-action">
-          <div class="quick-action-icon" style="background:#F3E8FF;color:#7C3AED;">
-            <i class="bi bi-clock-history"></i>
-          </div>
-          <div>
-            <div class="quick-action-label">My Usage</div>
-            <div class="quick-action-sub">Reading history</div>
-          </div>
-          <i class="bi bi-chevron-right"></i>
-        </a>
-      </div>
-      <div class="col-md-6 col-xl-3">
-        <a href="notifications.php" class="quick-action">
-          <div class="quick-action-icon" style="background:#FFF8E1;color:#D97706;">
-            <i class="bi bi-bell-fill"></i>
-          </div>
-          <div>
-            <div class="quick-action-label">Notifications</div>
-            <div class="quick-action-sub"><?php echo $unreadCount > 0 ? $unreadCount . ' unread' : 'All caught up'; ?></div>
-          </div>
-          <i class="bi bi-chevron-right"></i>
-        </a>
-      </div>
-      <div class="col-md-6 col-xl-3">
-        <a href="profile.php" class="quick-action">
-          <div class="quick-action-icon" style="background:#E8F8F0;color:#059669;">
-            <i class="bi bi-person-circle"></i>
-          </div>
-          <div>
-            <div class="quick-action-label">My Profile</div>
-            <div class="quick-action-sub">Account settings</div>
-          </div>
-          <i class="bi bi-chevron-right"></i>
-        </a>
-      </div>
-    </div>
-
   </div>
 </div>
 </div>
